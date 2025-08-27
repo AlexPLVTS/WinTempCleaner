@@ -24,7 +24,7 @@ namespace WinTempCleaner
         {
             this.WindowState = FormWindowState.Minimized;
             this.ShowInTaskbar = false;
-            RegistryManager.SetAutoStart();
+            TaskSchedulerManager.SetAutoStart();
             CheckAndSchedule();
         }
 
@@ -39,7 +39,7 @@ namespace WinTempCleaner
 
             if (freeSpace < SystemThresholds.TRIGGER_PERCENTAGE && freeSpace != -1 && !cleanupHasBeenScheduled)
             {
-                RegistryManager.ScheduleCleanupOnNextBoot();
+                TaskSchedulerManager.ScheduleCleanupOnNextBoot();
                 cleanupHasBeenScheduled = true;
 
                 notifyIcon2.ShowBalloonTip(5000,
@@ -47,11 +47,6 @@ namespace WinTempCleaner
                     "Low disk space detected. A cleanup is scheduled for the next startup.",
                     ToolTipIcon.Info);
             }
-        }
-
-        private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
-        {
-
         }
 
         private void statusStatsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -67,7 +62,7 @@ namespace WinTempCleaner
 
         private void visitGitHubCheckForUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string url = "https://github.com/AlexPLVTS";
+            string url = "https://github.com/AlexPLVTS/WinTempCleaner?tab=readme-ov-file";
 
             try
             {
@@ -81,7 +76,31 @@ namespace WinTempCleaner
         }
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Application.Exit();
+            string question = "Do you also want to prevent this application from starting with Windows?\n\n" +
+                              "• Yes: Disable auto-start and exit.\n" +
+                              "• No: Exit for this session only (will start again on reboot).\n" +
+                              "• Cancel: Don't exit.";
+
+            DialogResult result = MessageBox.Show(question, "Exit Options",
+                MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+
+            switch (result)
+            {
+                case DialogResult.Yes:
+                    // User wants to exit and disable
+                    TaskSchedulerManager.RemoveAutoStart();
+                    Application.Exit();
+                    break;
+
+                case DialogResult.No:
+                    // User wants to exit for this session only
+                    Application.Exit();
+                    break;
+
+                case DialogResult.Cancel:
+                    // User changed their mind, do nothing
+                    break;
+            }
         }
     }
 }
